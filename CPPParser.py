@@ -1,3 +1,5 @@
+import re
+import os
 from itertools import chain
 
 class CPPParser:
@@ -31,17 +33,29 @@ class CPPParser:
 		self.passed_in_names = []
 		self.main()
 
-	def main(self):
-		file = open("vimscript.txt")
-		file_lines = file.readlines()
+	def main(self):	
+		os.system('cls' if os.name == 'nt' else 'clear')
 
-		for line in file_lines:
-			print(line)
+		file = open("examplecode1.txt")
+		self.plain_text = file.read()
+		file.close()
+
+		print(self.plain_text,"\n\n\n")
+
+		self.lint_code()
+
+	def lint_code(self):
+		# 1. clear any whitespace before line breaks
+		self.modified_text = re.sub("(\\s)+[\r\n]", "\r\n", self.plain_text)
+
+		print(self.modified_text)
+		# 2. clear any line breaks that dont follow ';', '{', or '}'
 
 	def generate_skeleton_comment(self):
 		#LATER: format variables as table that adjusts based on longest variable name used
-		for name in map(None, self.passed_in_names:
+		for name in chain(self.passed_in_names, self.local_namespace_names):
 			#print table
-
-		for name in self.local_namespace_names:
-			#print table
+			return
+	#
+	
+parser = CPPParser()
