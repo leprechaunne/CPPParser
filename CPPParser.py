@@ -34,23 +34,30 @@ class CPPParser:
 		self.main()
 
 	def main(self):	
+		#clear screen
 		os.system('cls' if os.name == 'nt' else 'clear')
 
+		#save plaintext
 		file = open("examplecode1.txt")
 		self.plain_text = file.read()
 		file.close()
 
-		print(self.plain_text,"\n\n\n")
+		#tostring plain text
+		print(self.plain_text,"\n\n" + "-"*60 + "\n")
 
+		#clean code up (but dont modify the plaintext, they probably like their code formatted like that)
 		self.lint_code()
 
 	def lint_code(self):
 		# 1. clear any whitespace before line breaks
 		self.modified_text = re.sub("(\\s)+[\r\n]", "\r\n", self.plain_text)
 
-		print(self.modified_text)
 		# 2. clear any line breaks that dont follow ';', '{', or '}'
+		#		using raw strings because of the sheer amount of escaped characters
+		self.modified_text = re.sub(r"([^;{}])[\n\r]", r"\1", self.modified_text)
 
+
+		print(self.modified_text)
 	def generate_skeleton_comment(self):
 		#LATER: format variables as table that adjusts based on longest variable name used
 		for name in chain(self.passed_in_names, self.local_namespace_names):
