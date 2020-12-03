@@ -16,6 +16,14 @@ class CPPParser:
 		        ...
 		}
 	"""
+	# TODO:
+	# 	- Find passed-in variables
+	#	- Function line
+	# 	- Find non-typical variable instantiations
+	#	- Dynamically format skeleton comment based on longest variable name
+	#	- Hunt down the type for "auto" types
+
+
 	reserved_keywords = ["alignas","alignof","and","and_eq","asm","atomic_cancel","atomic_commit","atomic_noexcept","auto","bitand","bitor","bool",
 					"break","case","catch","char","char8_t","char16_t","char32_t","class","compl","concept","const","consteval","constexpr","constinit",
 					"const_cast","continue","co_await","co_return","co_yield","decltype","default","define","defined","delete","do","double","dynamic_cast",
@@ -52,12 +60,28 @@ class CPPParser:
 		#tostring print
 		#print(self.linted_code)
 
-		self.find_variables()
-
+		self.get_variables()
 		self.generate_skeleton_comment()
 
 
-	def find_variables(self):
+
+	def generate_skeleton_comment(self):
+		#LATER: format variables as table that adjusts based on longest variable name used'
+		#		will need an import, because variable tables aren't possible in python
+		self.skeleton_comment = "//"
+
+		# print(self.local_namespace_names)
+
+		for var_name, var_type in self.passed_in_names.items():
+			#print table
+			self.skeleton_comment += "\n//'{:35}{:10} - ".format(var_name+"'", var_type)
+
+		for var_name, var_type in self.local_namespace_names.items():
+			#print table
+			self.skeleton_comment += "\n//'{:35}{:10} - ".format(var_name+"'", var_type) 
+
+
+	def get_variables(self):
 		potential_variables = re.finditer("(?P<vartype>[a-zA-Z0-9\_\-]*)\s(?P<varname>[a-zA-Z0-9\_\-]*) ?=[^=]", self.linted_code)
 
 		for var in potential_variables:
@@ -69,23 +93,6 @@ class CPPParser:
 			if self.is_variable_new_and_valid(var_name):
 				self.local_namespace_names[var_name] = var_type
 		# print(self.local_namespace_names)
-
-	def generate_skeleton_comment(self):
-		#LATER: format variables as table that adjusts based on longest variable name used'
-		#		will need an import, because variable tables aren't possible in python
-		self.skeleton_comment = "//"
-
-		print(self.local_namespace_names)
-		ten = 10
-		for var_name, var_type in self.passed_in_names.items():
-			#print table
-			self.skeleton_comment += "\n//'{:35}{:10} - ".format(var_name+"'", var_type)
-
-		for var_name, var_type in self.local_namespace_names.items():
-			#print table
-			self.skeleton_comment += "\n//'{:35}{:10} - ".format(var_name+"'", var_type) 
-
-		print(self.skeleton_comment)
 
 	def is_CPP_reserved_keyword(self, name):
 		if name in CPPParser.reserved_keywords:
