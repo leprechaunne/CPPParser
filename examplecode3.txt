@@ -1,0 +1,9 @@
+ClassName obj;
+ClassName obj2(param1, param2);
+auto OBJ3 = ClassName(parameter2=param2);
+if(elems[i] = true){
+	ClassName obj_4(param1,
+						param2,
+						param3);    
+						
+}

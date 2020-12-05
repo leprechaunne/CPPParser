@@ -1,0 +1,8 @@
+this line is okay;
+this line is not okay
+{}
+this line is also not okay(
+	this, is not,
+	okay);
+	
+also this}
