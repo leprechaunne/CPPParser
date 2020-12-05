@@ -22,6 +22,8 @@ class CPPParser:
 	# 	- Find non-typical variable instantiations
 	#	- Dynamically format skeleton comment based on longest variable name
 	#	- Hunt down the type for "auto" types
+	#	- Optimize dictionary use for "potential_variables" so I'm not creating a new dict everytime
+
 
 
 	reserved_keywords = ["alignas","alignof","and","and_eq","asm","atomic_cancel","atomic_commit","atomic_noexcept","auto","bitand","bitor","bool",
@@ -60,8 +62,11 @@ class CPPParser:
 		#tostring print
 		#print(self.linted_code)
 
-		self.get_variables()
+		self.find_variables()
 		self.generate_skeleton_comment()
+
+		print(self.local_namespace_names, self.passed_in_names)
+		print("\n\n\n", self.skeleton_comment)
 
 
 
@@ -74,25 +79,38 @@ class CPPParser:
 
 		for var_name, var_type in self.passed_in_names.items():
 			#print table
-			self.skeleton_comment += "\n//'{:35}{:10} - ".format(var_name+"'", var_type)
+			self.skeleton_comment += "\n//`{:35}{:10} - ".format(var_name+"`", var_type)
 
 		for var_name, var_type in self.local_namespace_names.items():
 			#print table
-			self.skeleton_comment += "\n//'{:35}{:10} - ".format(var_name+"'", var_type) 
+			self.skeleton_comment += "\n//`{:35}{:10} - ".format(var_name+"`", var_type) 
+		#
+
+	def find_potential_local_variables(self):
+		#helper for local and passed in variable finders
+		#check for "~~ ~~ ~~ VarType variable = ~~~~;"
+		re_matches = re.finditer("(?P<vartype>[a-zA-Z0-9\_\-]*)[&*]*?\s(?P<varname>[a-zA-Z0-9\_\-]*) ?=[^=]", self.linted_code)
+		potential_variables = self.unpack_regex_match_list_to_dict(re_matches)
 
 
-	def get_variables(self):
-		potential_variables = re.finditer("(?P<vartype>[a-zA-Z0-9\_\-]*)\s(?P<varname>[a-zA-Z0-9\_\-]*) ?=[^=]", self.linted_code)
+		#check for instantiation without '='
+		re_matches = re.finditer("(?P<vartype>[a-zA-Z0-9]*)[&*]*? (?P<varname>[a-zA-Z0-9]*)(?:\(?[^\n\r=]*\)?)?;", self.linted_code)
+		potential_variables.update(self.unpack_regex_match_list_to_dict(re_matches))
 
-		for var in potential_variables:
-			var_name = var.group("varname")
-			var_type = var.group("vartype")
+		# print(potential_variables)
+		return potential_variables
+		
 
-			# print("name: {:30} type: {:20}".format(var_name, var_type))
+	def find_potential_passed_in_variables(self):
+		return
 
-			if self.is_variable_new_and_valid(var_name):
-				self.local_namespace_names[var_name] = var_type
-		# print(self.local_namespace_names)
+
+	def find_variables(self):
+		potential_passed_in_variables = self.find_potential_passed_in_variables()
+		self.validate_potential_passed_in_variables(potential_passed_in_variables)
+
+		potential_local_variables = self.find_potential_local_variables()
+		self.validate_potential_local_variables(potential_local_variables)
 
 	def is_CPP_reserved_keyword(self, name):
 		if name in CPPParser.reserved_keywords:
@@ -100,7 +118,7 @@ class CPPParser:
 		return False
 
 	def is_variable_already_known(self, name):
-		#checks if a variable is already known
+		#checks if a variable is already known 
 		if name in self.local_namespace_names:
 			return True
 		if name in self.passed_in_names:
@@ -108,9 +126,37 @@ class CPPParser:
 		return False
 
 	def is_variable_new_and_valid(self, name):
+		if not name:
+			return False
 		if self.is_CPP_reserved_keyword(name) and self.is_variable_already_known(name):
 			return False
 		return True
+
+	def validate_potential_local_variables(self, potential_variables):
+		for var_name, var_type in potential_variables.items():
+			if self.is_variable_new_and_valid(var_name):
+				self.local_namespace_names[var_name] = var_type
+
+		return 
+
+	def validate_potential_passed_in_variables(self, potential_variables):
+		return
+
+	def unpack_regex_match_list_to_dict(self, match_list):
+		output_dict = {}
+
+		for var in match_list:
+			var_name = var.group("varname")
+			var_type = var.group("vartype")
+
+			output_dict[var_name] = var_type
+
+		return output_dict
+
+
+
+
+
 
 class CPP_Linter:
 	def __init__(self, unlinted_code):
@@ -133,5 +179,9 @@ class CPP_Linter:
 
 	def get_linted_code(self):
 		return self.linted_code
+
+
+
+
 
 parser = CPPParser()
