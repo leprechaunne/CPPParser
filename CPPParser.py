@@ -19,10 +19,14 @@ class CPPParser:
 	# TODO:
 	# 	- Find passed-in variables
 	#	- Function line
+	#	- Format code (indent)
 	# 	- Find non-typical variable instantiations
 	#	- Dynamically format skeleton comment based on longest variable name
 	#	- Hunt down the type for "auto" types
-	#	- Optimize dictionary use for "potential_variables" so I'm not creating a new dict everytime
+	#	- Find the order of first references to sort the skeleton by
+	#	- attempt to find most likely return variable if a return line isnt given (this feature should be optional in parameters) 
+
+	# DONE:
 
 
 
@@ -65,8 +69,8 @@ class CPPParser:
 		self.find_variables()
 		self.generate_skeleton_comment()
 
-		print(self.local_namespace_names, self.passed_in_names)
-		print("\n\n\n", self.skeleton_comment)
+		# print(self.local_namespace_names, self.passed_in_names)
+		print("Skeleton Comment:", self.skeleton_comment, sep="\n")
 
 
 
@@ -75,16 +79,23 @@ class CPPParser:
 		#		will need an import, because variable tables aren't possible in python
 		self.skeleton_comment = "//"
 
-		# print(self.local_namespace_names)
+		#deprecated version of printing to be used when items are sorted by the order they're encountered in
+			# for var_name, var_type in self.passed_in_names.items():
+			# 	#print table
+			# 	self.skeleton_comment += "\n//`{:35}{:10} - ".format(var_name+"`", var_type)
 
-		for var_name, var_type in self.passed_in_names.items():
-			#print table
-			self.skeleton_comment += "\n//`{:35}{:10} - ".format(var_name+"`", var_type)
+			# for var_name, var_type in self.local_namespace_names.items():
+			# 	#print table
+			# 	self.skeleton_comment += "\n//`{:35}{:10} - ".format(var_name+"`", var_type) 
+		
+		master_dict = self.passed_in_names
+		master_dict.update(self.local_namespace_names)
 
-		for var_name, var_type in self.local_namespace_names.items():
-			#print table
+		for var_name in sorted(master_dict.keys()):
+			var_type = master_dict[var_name]
 			self.skeleton_comment += "\n//`{:35}{:10} - ".format(var_name+"`", var_type) 
-		#
+
+		return
 
 	def find_potential_local_variables(self):
 		#helper for local and passed in variable finders
@@ -94,7 +105,9 @@ class CPPParser:
 
 
 		#check for instantiation without '='
-		re_matches = re.finditer("(?P<vartype>[a-zA-Z0-9]*)[&*]*? (?P<varname>[a-zA-Z0-9]*)(?:\(?[^\n\r=]*\)?)?;", self.linted_code)
+		# re_matches = re.finditer(".(?!=)(?P<vartype>[a-zA-Z0-9]*)[&*]*? (?P<varname>[a-zA-Z0-9]*)(?:\(?[^\n\r=]*\)?)?;", self.linted_code)
+		re_matches = re.finditer(r"(?:P<vartype>[a-zA-Z0-9]+)[*&]*? (:?P<varname>[a-zA-Z0-9]+)(?:\(.*?\))?;", self.linted_code)
+
 		potential_variables.update(self.unpack_regex_match_list_to_dict(re_matches))
 
 		# print(potential_variables)
@@ -126,8 +139,16 @@ class CPPParser:
 		return False
 
 	def is_variable_new_and_valid(self, name):
+		# check for empty name
 		if not name:
 			return False
+		# check for constant
+		try:
+			float(name)
+			return False
+		except:
+			pass
+
 		if self.is_CPP_reserved_keyword(name) and self.is_variable_already_known(name):
 			return False
 		return True
