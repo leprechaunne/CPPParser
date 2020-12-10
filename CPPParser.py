@@ -110,7 +110,12 @@ class CPPParser:
 
 		potential_variables.update(self.unpack_regex_match_list_to_dict(re_matches))
 
-		# print(potential_variables)
+		#check for ASSIGN_OR_RETURN() uses
+		re_matches = re.finditer(r"ASSIGN_OR_RETURN\((?P<vartype>[a-zA-Z0-9]+?) (?P<varname>[a-zA-Z0-9]+).*\)", self.linted_code)
+
+		potential_variables.update(self.unpack_regex_match_list_to_dict(re_matches))
+
+		print(potential_variables)
 		return potential_variables
 		
 

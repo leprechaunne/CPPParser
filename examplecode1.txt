@@ -8,6 +8,7 @@ for(int i = 0; i < 30; i++){
                         LoadBuffer(buffer_index)
                 );      
                 LOG_BUG(num_bugs, modified_buffer_index);
+                ASSIGN_OR_RETURN(MyType saintmotel, foo());
         }
 
 
